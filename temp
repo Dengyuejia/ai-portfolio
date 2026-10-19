@@ -1,0 +1,36 @@
+"""作业 1 的证据：temperature 在 API 的 options 里单次覆盖，效果对比。
+同一提示词、同一 seed，只把 temperature 从 0 改成 1.2，各跑 3 次。
+"""
+import json
+import os
+import urllib.request
+HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+if "://" not in HOST:
+    HOST = "http://" + HOST
+PROMPT = "用一句话描写秋天，不超过 20 个字。"
+MODEL = "qwen2.5:0.5b"
+def chat(temperature: float, seed: int) -> str:
+    body = {
+        "model": MODEL,
+        "messages": [{"role": "user", "content": PROMPT}],
+        "stream": False,
+        "options": {"temperature": temperature, "seed": seed, "num_predict": 80},
+    }
+    req = urllib.request.Request(
+        HOST + "/api/chat",
+        data=json.dumps(body).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(req, timeout=120) as r:
+        return json.loads(r.read().decode())["message"]["content"]
+out = {}
+for temp in (0, 1.2):
+    # 固定 seed 时 temperature=0 与 1.2 都会复现同一条；
+    # 换三个 seed 才能看出“0 永远一样、1.2 每次不同”。
+    outs = [chat(temp, seed) for seed in (1, 2, 3)]
+    out[str(temp)] = outs
+    print(f"temperature={temp}")
+    for i, text in enumerate(outs, 1):
+        print(f"  {i}. {text.strip()}")
+with open(os.path.join(os.path.dirname(__file__), "temp_demo.json"), "w", encoding="utf-8") as f:
+    json.dump(out, f, ensure_ascii=False, indent=2)
