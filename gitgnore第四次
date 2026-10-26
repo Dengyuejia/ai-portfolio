@@ -1,8 +1,0 @@
-@@ -1,0 +1,7 @@
-# 本地 Ollama 实例与工具，不进仓库
-.ollama-home/
-.ollama-models/
-tools/mingit/
-tools/mingit.zip
-__pycache__/
-*.pyc
